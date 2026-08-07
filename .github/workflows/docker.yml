@@ -34,8 +34,8 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/devboard-backend:latest
 
   deploy-prod:
-    - name: deploy-prod
-      needs: [docker-login]
-      uses: ./.github/workflows/cd.yml
-      secrets: inherit
+    name: deploy-prod
+    needs: [docker-login]
+    uses: ./.github/workflows/cd.yml
+    secrets: inherit
   
