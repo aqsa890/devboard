@@ -37,5 +37,5 @@ jobs:
     name: deploy-prod
     needs: [docker-login]
     uses: ./.github/workflows/cd.yml
-    secrets: inherit
+    secrets: inherit 
   
