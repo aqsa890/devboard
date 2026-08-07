@@ -32,5 +32,26 @@ jobs:
         working-directory: frontend
 
           
+  install-and-test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: cloning code
+        uses: actions/checkout@v4
         
+      - name: setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          cache: true
+      
+      - name: Install deps
+        run: go mod download
+        working-directory: backend
+    
+      - name: Install vet
+        run: go vet backend/...
+        working-directory: backend
         
+      - name: Run tests
+        run: go test -v ./...
+        working-directory: backend
