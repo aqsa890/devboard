@@ -1,6 +1,6 @@
 name: code deploy 
 on:
-  workflow_dispatch:
+  workflow_call:
 jobs:
   deploy-prod:
     name: deploy-prod
@@ -60,5 +60,5 @@ jobs:
 
       - name: Deploy the containers with Docker Compose
         run: |
-          docker compose up -d
+          sudo docker compose up -d
    

@@ -62,8 +62,3 @@ jobs:
     uses: ./.github/workflows/docker.yml
     secrets: inherit
 
-  deploy-prod:
-    name: deploy-prod
-    needs: [deploy]
-    uses: ./.github/workflows/cd .yml
-    secrets: inherit
