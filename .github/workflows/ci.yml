@@ -59,4 +59,8 @@ jobs:
         run: go test -v ./...
         working-directory: backend
 
-
+  docker:
+    needs: [install-and-test-frontend,install-and-test-backend]
+    uses: ./.github/workflows/docker.yml
+    secrets: inherit
+    
