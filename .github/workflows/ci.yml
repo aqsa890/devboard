@@ -1,8 +1,10 @@
 name: devboard CI
 
-on: 
-  - push
-  - workflow_dispatch
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   install-and-test-frontend:
@@ -56,3 +58,5 @@ jobs:
       - name: Run tests
         run: go test -v ./...
         working-directory: backend
+
+
