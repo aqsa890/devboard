@@ -49,5 +49,6 @@ jobs:
 
       - name: Deploy the containers with Docker Compose
         run: |
-          sudo docker compose up -d
+          sudo IMAGE_TAG=latest docker compose pull
+          sudo IMAGE_TAG=latest docker compose up -d
    
