@@ -6,9 +6,6 @@ on:
       - main
   workflow_dispatch:
 
-  schedule:
-    - cron: "*/5 * * * *"
-
 jobs:
   build-frontend:
     name: Build Frontend
