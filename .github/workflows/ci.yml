@@ -10,6 +10,10 @@ jobs:
   build-frontend:
     name: Build Frontend
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version:
+          [20,22]
 
     steps:
       - name: Checkout code
@@ -18,7 +22,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: ${{ matrix.node-version}}
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
@@ -37,7 +41,11 @@ jobs:
   build-backend:
     name: Build Backend
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        go-version:
+          [1.24,1.25,1.26]
+          
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,7 +53,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: ${{ matrix.go-version }}
           cache: true
 
       - name: Install dependencies
