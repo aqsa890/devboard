@@ -28,7 +28,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    image: rayyan12311/devboard-backend:${IMAGE_TAG:-v1.0.0}
+    image: elsa888/devboard-backend:latest
     restart: unless-stopped
     environment:
       PORT: "${BACKEND_PORT:-8080}"
@@ -52,7 +52,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    image: rayyan12311/devboard-frontend:${IMAGE_TAG:-v1.0.0}
+    image: elsa888/devboard-frontend:latest
     restart: unless-stopped
     ports:
       - "${FRONTEND_HOST_PORT:-8080}:8080"
