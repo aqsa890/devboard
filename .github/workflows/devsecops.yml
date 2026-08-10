@@ -20,3 +20,6 @@ jobs:
 
   dependency-scan:
     uses: ./.github/workflows/dependency_scan.yml
+
+  hadolint:
+    uses: ./.github/workflows/hadolint.yml

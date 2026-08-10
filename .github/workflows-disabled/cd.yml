@@ -1,54 +1,54 @@
-# name: code deploy 
-# on:
-#   workflow_call:
-# jobs:
-#   deploy-prod:
-#     name: deploy-prod
-#     runs-on: self-hosted
-#     steps:
-#       - name: Code Checkout
-#         uses: actions/checkout@v4
+name: code deploy 
+on:
+  workflow_call:
+jobs:
+  deploy-prod:
+    name: deploy-prod
+    runs-on: self-hosted
+    steps:
+      - name: Code Checkout
+        uses: actions/checkout@v4
 
-#       - name: Install Docker and Docker Compose
-#         run: |
-#           export DEBIAN_FRONTEND=noninteractive
-#           export NEEDRESTART_MODE=a
+      - name: Install Docker and Docker Compose
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          export NEEDRESTART_MODE=a
 
-#           if ! command -v docker &> /dev/null; then
-#             echo "Docker not found. Installing..."
-#             curl -fsSL https://get.docker.com | sudo -E sh
-#           else
-#             echo "Docker is already installed."
-#           fi
+          if ! command -v docker &> /dev/null; then
+            echo "Docker not found. Installing..."
+            curl -fsSL https://get.docker.com | sudo -E sh
+          else
+            echo "Docker is already installed."
+          fi
           
-#           if command -v systemctl &> /dev/null; then
-#             sudo systemctl start docker || true
-#             sudo systemctl enable docker || true
-#           fi
+          if command -v systemctl &> /dev/null; then
+            sudo systemctl start docker || true
+            sudo systemctl enable docker || true
+          fi
           
-#           sudo chmod 666 /var/run/docker.sock || true
+          sudo chmod 666 /var/run/docker.sock || true
 
-#           if ! docker compose version &> /dev/null; then
-#             echo "Docker Compose not found. Installing..."
-#             mkdir -p ~/.docker/cli-plugins/
-#             curl -SL "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)" -o ~/.docker/cli-plugins/docker-compose
-#             chmod +x ~/.docker/cli-plugins/docker-compose
-#           fi
+          if ! docker compose version &> /dev/null; then
+            echo "Docker Compose not found. Installing..."
+            mkdir -p ~/.docker/cli-plugins/
+            curl -SL "https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-$(uname -s | tr '[:upper:]' '[:lower:]')-$(uname -m)" -o ~/.docker/cli-plugins/docker-compose
+            chmod +x ~/.docker/cli-plugins/docker-compose
+          fi
           
-#           docker --version
-#           docker compose version
+          docker --version
+          docker compose version
 
-#       - name: Copy Example Env to main env
-#         run: cp .env.example .env
+      - name: Copy Example Env to main env
+        run: cp .env.example .env
 
-#       - name: Docker Setup [Login]
-#         uses: docker/login-action@v3
-#         with:
-#           username: ${{ secrets.DOCKER_USERNAME }}
-#           password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Docker Setup [Login]
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-#       - name: Deploy the containers with Docker Compose
-#         run: |
-#           IMAGE_TAG=latest docker compose pull
-#           IMAGE_TAG=latest docker compose up -d 
+      - name: Deploy the containers with Docker Compose
+        run: |
+          IMAGE_TAG=latest docker compose pull
+          IMAGE_TAG=latest docker compose up -d 
    
