@@ -18,70 +18,81 @@ jobs:
         uses: actions/checkout@v4
 
       # -------------------------
-      # Backend - Go
-      # -------------------------
-
-      - name: Setup Go
-        if: matrix.folder == 'backend'
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: backend/go.mod
-          cache: true
-          cache-dependency-path: backend/go.sum
-
-      - name: Install Govulncheck
-        if: matrix.folder == 'backend'
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: Run Go Vulnerability Scan
-        if: matrix.folder == 'backend'
-        run: |
-          mkdir -p reports
-          govulncheck ./... > reports/govulncheck-report.txt
-        working-directory: backend
-
-      # -------------------------
-      # Frontend - Node
+      # FRONTEND
       # -------------------------
 
       - name: Setup Node
         if: matrix.folder == 'frontend'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: '20'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install Node Dependencies
         if: matrix.folder == 'frontend'
+        working-directory: frontend
         run: npm ci
-        working-directory: frontend
 
-      - name: Run Node Dependency Scan
+      - name: Create Reports Directory
         if: matrix.folder == 'frontend'
-        run: |
-          mkdir -p reports
-          npm audit --json > reports/npm-audit-report.json
-        working-directory: frontend
-        continue-on-error: true
+        run: mkdir -p reports
 
-      - name: Enforce Dependency Scan Results
+      - name: Run NPM Audit
         if: matrix.folder == 'frontend'
-        run: |
-          echo "Checking for High and Critical vulnerabilities..."
-          npm audit --audit-level=high
         working-directory: frontend
+        run: |
+          npm audit --json > ../reports/npm-audit-report.json || true
+
+      - name: Enforce NPM Audit
+        if: matrix.folder == 'frontend'
+        working-directory: frontend
+        run: |
+          echo "Checking for Moderate, High and Critical vulnerabilities..."
+          npm audit --audit-level=moderate
 
       # -------------------------
-      # Upload Reports
+      # BACKEND
       # -------------------------
 
-      - name: Upload Dependency Scan Report
+      - name: Setup Go
+        if: matrix.folder == 'backend'
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Install Go Dependencies
+        if: matrix.folder == 'backend'
+        working-directory: backend
+        run: go mod download
+
+      - name: Install Govulncheck
+        if: matrix.folder == 'backend'
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run Govulncheck
+        if: matrix.folder == 'backend'
+        working-directory: backend
+        run: |
+          mkdir -p ../reports
+          govulncheck -json ./... > ../reports/govulncheck-report.json || true
+
+      - name: Enforce Go Vulnerabilities
+        if: matrix.folder == 'backend'
+        working-directory: backend
+        run: |
+          echo "Checking Go vulnerabilities..."
+          govulncheck ./...
+
+      # -------------------------
+      # UPLOAD
+      # -------------------------
+
+      - name: Upload Dependency Reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-scan-report-${{ matrix.folder }}
-          path: |
-            frontend/reports/
-            backend/reports/
-          retention-days: 5
+          path: reports/
+          retention-days: 5 
