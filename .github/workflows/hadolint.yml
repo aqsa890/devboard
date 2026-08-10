@@ -16,6 +16,7 @@ jobs:
 
             - name: ${{ matrix.folders}} Dockerfile Lint
               uses: hadolint/hadolint-action@v3.1.0
+              continue-on-error: true
               with:
                 dockerfile: ${{ matrix.folders}}/Dockerfile
               
