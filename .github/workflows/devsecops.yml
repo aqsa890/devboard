@@ -11,3 +11,6 @@ jobs:
 
   code-scan:
     uses: ./.github/workflows/code_scan.yml
+
+  dependency-scan:
+    uses: ./.github/workflows/dependency_scan.yml
