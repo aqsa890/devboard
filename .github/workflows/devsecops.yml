@@ -1,0 +1,10 @@
+name: All scanning
+on:
+  push:
+    branches: 'main'
+
+jobs:
+  code-quality:
+    uses: ./.github/workflows/code_quality.yml
+
+  
