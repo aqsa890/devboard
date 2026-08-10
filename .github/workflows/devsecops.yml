@@ -8,3 +8,6 @@ on:
 jobs:
   code-quality:
     uses: ./.github/workflows/code_quality.yml
+
+  code-scan:
+    uses: ./.github/workflows/code_scan.yml
