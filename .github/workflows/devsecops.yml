@@ -5,6 +5,12 @@ on:
     branches:
       - main
 
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   code-quality:
     uses: ./.github/workflows/code_quality.yml
