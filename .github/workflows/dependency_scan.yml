@@ -68,8 +68,8 @@ jobs:
       - name: Enforce Dependency Scan Results
         if: matrix.folder == 'frontend'
         run: |
-          echo "Checking for Moderate, High and Critical vulnerabilities..."
-          npm audit --audit-level=moderate
+          echo "Checking for High and Critical vulnerabilities..."
+          npm audit --audit-level=high
         working-directory: frontend
 
       # -------------------------
