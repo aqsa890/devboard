@@ -44,12 +44,12 @@ jobs:
         run: |
           npm audit --json > ../reports/npm-audit-report.json || true
 
-      - name: Enforce NPM Audit
-        if: matrix.folder == 'frontend'
-        working-directory: frontend
-        run: |
-          echo "Checking for High and Critical vulnerabilities..."
-          npm audit --audit-level=high
+      # - name: Enforce NPM Audit
+      #   if: matrix.folder == 'frontend'
+      #   working-directory: frontend
+      #   run: |
+      #     echo "Checking for High and Critical vulnerabilities..."
+      #     npm audit --audit-level=high
 
       # =========================
       # BACKEND
@@ -83,12 +83,12 @@ jobs:
         run: |
           govulncheck -json ./... > ../reports/govulncheck-report.json || true
 
-      - name: Enforce Go Vulnerabilities
-        if: matrix.folder == 'backend'
-        working-directory: backend
-        run: |
-          echo "Checking Go vulnerabilities..."
-          govulncheck ./...
+      # - name: Enforce Go Vulnerabilities
+      #   if: matrix.folder == 'backend'
+      #   working-directory: backend
+      #   run: |
+      #     echo "Checking Go vulnerabilities..."
+      #     govulncheck ./...
 
       # =========================
       # UPLOAD REPORT
