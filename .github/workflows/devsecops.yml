@@ -7,4 +7,3 @@ jobs:
   code-quality:
     uses: ./.github/workflows/code_quality.yml
 
-  
