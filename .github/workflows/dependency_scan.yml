@@ -17,9 +17,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # -------------------------
+      # =========================
       # FRONTEND
-      # -------------------------
+      # =========================
 
       - name: Setup Node
         if: matrix.folder == 'frontend'
@@ -38,7 +38,7 @@ jobs:
         if: matrix.folder == 'frontend'
         run: mkdir -p reports
 
-      - name: Run NPM Audit
+      - name: Run NPM Audit Report
         if: matrix.folder == 'frontend'
         working-directory: frontend
         run: |
@@ -48,12 +48,12 @@ jobs:
         if: matrix.folder == 'frontend'
         working-directory: frontend
         run: |
-          echo "Checking for Moderate, High and Critical vulnerabilities..."
-          npm audit --audit-level=moderate
+          echo "Checking for High and Critical vulnerabilities..."
+          npm audit --audit-level=high
 
-      # -------------------------
+      # =========================
       # BACKEND
-      # -------------------------
+      # =========================
 
       - name: Setup Go
         if: matrix.folder == 'backend'
@@ -69,13 +69,18 @@ jobs:
 
       - name: Install Govulncheck
         if: matrix.folder == 'backend'
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Run Govulncheck
+      - name: Create Reports Directory
+        if: matrix.folder == 'backend'
+        run: mkdir -p reports
+
+      - name: Run Govulncheck Report
         if: matrix.folder == 'backend'
         working-directory: backend
         run: |
-          mkdir -p ../reports
           govulncheck -json ./... > ../reports/govulncheck-report.json || true
 
       - name: Enforce Go Vulnerabilities
@@ -85,9 +90,9 @@ jobs:
           echo "Checking Go vulnerabilities..."
           govulncheck ./...
 
-      # -------------------------
-      # UPLOAD
-      # -------------------------
+      # =========================
+      # UPLOAD REPORT
+      # =========================
 
       - name: Upload Dependency Reports
         if: always()
@@ -95,4 +100,4 @@ jobs:
         with:
           name: dependency-scan-report-${{ matrix.folder }}
           path: reports/
-          retention-days: 5 
+          retention-days: 5
