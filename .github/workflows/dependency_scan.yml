@@ -1,4 +1,4 @@
-name: Dependency scan
+name: Dependency Scan
 
 on:
   workflow_call:
@@ -8,49 +8,80 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-        matrix: 
-         folder: ['frontend', 'backend']
+      matrix:
+        folder:
+          - frontend
+          - backend
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # -------------------------
+      # Backend - Go
+      # -------------------------
+
       - name: Setup Go
-        uses: actions/setup-go@v6
+        if: matrix.folder == 'backend'
+        uses: actions/setup-go@v5
         with:
-            go-version: 1.22
-            go-version-file: 'go.mod'
-            cache-dependency-path: go.sum
+          go-version-file: backend/go.mod
+          cache: true
+          cache-dependency-path: backend/go.sum
 
       - name: Install Govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+        if: matrix.folder == 'backend'
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      - name: GoVulncheck
-        continue-on-error: true
-        run: govulncheck ./... > govulncheck-report.txt
+      - name: Run Go Vulnerability Scan
+        if: matrix.folder == 'backend'
+        run: |
+          mkdir -p reports
+          govulncheck ./... > reports/govulncheck-report.txt
         working-directory: backend
 
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-            node-version: '20'
-            cache: npm
-            cache-dependency-path: frontend/package-lock.json
+      # -------------------------
+      # Frontend - Node
+      # -------------------------
 
-      - name: Run Dependency Scan for Node
-        run: npm audit
+      - name: Setup Node
+        if: matrix.folder == 'frontend'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Node Dependencies
+        if: matrix.folder == 'frontend'
+        run: npm ci
         working-directory: frontend
 
-      - name: Upload Report to Artifacts
-        if: always() # Ensures report uploads even if tests fail
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-security-report-${{ matrix.folder }}
-          path: ${{ matrix.folder }}/npm-audit-report.json
-          retention-days: 5
+      - name: Run Node Dependency Scan
+        if: matrix.folder == 'frontend'
+        run: |
+          mkdir -p reports
+          npm audit --json > reports/npm-audit-report.json
+        working-directory: frontend
+        continue-on-error: true
 
       - name: Enforce Dependency Scan Results
-        working-directory: ${{ matrix.folder }}
+        if: matrix.folder == 'frontend'
         run: |
-          echo "Checking for High and Critical vulnerabilities..."
-          npm audit --audit-level=high
+          echo "Checking for Moderate, High and Critical vulnerabilities..."
+          npm audit --audit-level=moderate
+        working-directory: frontend
+
+      # -------------------------
+      # Upload Reports
+      # -------------------------
+
+      - name: Upload Dependency Scan Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-scan-report-${{ matrix.folder }}
+          path: |
+            frontend/reports/
+            backend/reports/
+          retention-days: 5
