@@ -32,6 +32,7 @@ jobs:
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/devboard-backend:latest
+        secrets: inherit 
 
 #   deploy-prod:
 #     name: deploy-prod
