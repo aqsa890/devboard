@@ -12,9 +12,11 @@ jobs:
     name: "Deploy to Staging EC2"
     environment: staging
     runs-on: self-hosted
+    env:
+      EC2_HOST: ${{ secrets.EC2_STAGING_HOST }}
     steps:
       - name: Deploy to EC2 Staging Instance via SSH
-        if: secrets.EC2_STAGING_HOST != ''
+        if: env.EC2_HOST != ''
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_STAGING_HOST }}
