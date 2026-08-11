@@ -31,7 +31,7 @@ jobs:
         working-directory: frontend
 
   backend-quality-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
 
     steps:
       - name: Checkout Code
