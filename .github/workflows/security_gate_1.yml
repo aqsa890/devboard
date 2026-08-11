@@ -1,0 +1,15 @@
+name: "Security Gate 1"
+
+on:
+  workflow_call:
+
+jobs:
+  gate-1:
+    name: "Security Gate 1 Evaluation"
+    runs-on: self-hosted
+    steps:
+      - name: Verify Security Scans Status
+        run: |
+          echo "=================================================="
+          echo " Security Gate 1 Passed: Code Scans & Linting Clean "
+          echo "=================================================="

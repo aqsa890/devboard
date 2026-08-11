@@ -1,0 +1,36 @@
+name: "Job 2: Code Linting"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: "Linting (Go & ESLint)"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Backend Lint (Go Vet)
+        run: |
+          cd backend
+          go vet ./...
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Frontend Lint (ESLint)
+        run: |
+          cd frontend
+          npm ci
+          npm run lint

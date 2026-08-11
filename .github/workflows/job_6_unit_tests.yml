@@ -1,0 +1,36 @@
+name: "Job 6: Unit Tests"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: "Unit Testing (Go & Vitest)"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run Backend Unit Tests
+        run: |
+          cd backend
+          go test -v -coverprofile=coverage.out ./...
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Frontend Unit Tests
+        run: |
+          cd frontend
+          npm ci
+          npm test

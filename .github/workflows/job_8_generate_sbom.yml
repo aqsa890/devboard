@@ -1,0 +1,37 @@
+name: "Job 8: Generate SBOM"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-sbom:
+    name: "Generate SBOM (Syft / Trivy)"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Backend SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'devboard-backend:${{ github.sha }}'
+          format: 'spdx-json'
+          output: 'backend-sbom.spdx.json'
+
+      - name: Generate Frontend SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'devboard-frontend:${{ github.sha }}'
+          format: 'spdx-json'
+          output: 'frontend-sbom.spdx.json'
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: '*.spdx.json'

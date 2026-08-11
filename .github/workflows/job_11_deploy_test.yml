@@ -1,0 +1,21 @@
+name: "Job 11: Deploy Test"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-test:
+    name: "Deploy Test Instance"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Spin Up Ephemeral Test Stack
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+          echo "Test environment live on http://localhost:8080"

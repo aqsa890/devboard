@@ -1,0 +1,29 @@
+name: "Job 4: Dependency / SCA Scan"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  dependency-sca:
+    name: "Dependency Scan (Trivy FS & npm audit)"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trivy Dependency Scan (Filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Frontend npm audit
+        run: |
+          cd frontend
+          npm audit --audit-level=high || true

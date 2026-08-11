@@ -1,0 +1,25 @@
+name: "Job 7: Build Containers"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: "Build Container Images"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t devboard-backend:${{ github.sha }} ./backend
+          docker tag devboard-backend:${{ github.sha }} devboard-backend:latest
+
+      - name: Build Frontend Docker Image
+        run: |
+          docker build -t devboard-frontend:${{ github.sha }} ./frontend
+          docker tag devboard-frontend:${{ github.sha }} devboard-frontend:latest

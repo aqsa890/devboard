@@ -1,0 +1,27 @@
+name: "Job 9: Container Scan"
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  container-scan:
+    name: "Container Scan (Trivy)"
+    runs-on: self-hosted
+    steps:
+      - name: Scan Backend Container Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devboard-backend:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan Frontend Container Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devboard-frontend:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
