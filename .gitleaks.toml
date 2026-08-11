@@ -1,0 +1,15 @@
+# Gitleaks Secret Scanning Configuration
+title = "Gitleaks DevBoard Security Configuration"
+
+[allowlist]
+description = "Global allowlist for benign strings and example files"
+paths = [
+  '''\.env\.example''',
+  '''go\.sum''',
+  '''package-lock\.json''',
+  '''docs/.*'''
+]
+regexes = [
+  '''POSTGRES_PASSWORD: \$\{POSTGRES_PASSWORD:-devboard\}''',
+  '''devboard'''
+]

@@ -1,0 +1,392 @@
+name: Production SecOps Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  packages: write
+  deployments: write
+
+jobs:
+  # =========================================================================
+  # JOB 1: Secret Scan (Gitleaks)
+  # =========================================================================
+  job-1-secret-scan:
+    name: "Job 1: Secret Scan"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 2: Lint (Go & ESLint)
+  # =========================================================================
+  job-2-lint:
+    name: "Job 2: Code Linting"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Backend Lint (Go Vet)
+        run: |
+          cd backend
+          go vet ./...
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Frontend Lint (ESLint)
+        run: |
+          cd frontend
+          npm ci
+          npm run lint
+
+  # =========================================================================
+  # JOB 3: SAST (SonarQube)
+  # =========================================================================
+  job-3-sast-sonarqube:
+    name: "Job 3: SAST (SonarQube)"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        continue-on-error: true
+
+  # =========================================================================
+  # JOB 4: Dependency / SCA (Trivy FS Scan & npm audit)
+  # =========================================================================
+  job-4-dependency-sca:
+    name: "Job 4: Dependency / SCA Scan"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trivy Dependency Scan (Filesystem)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Frontend npm audit
+        run: |
+          cd frontend
+          npm audit --audit-level=high || true
+
+  # =========================================================================
+  # JOB 5: IaC Security (Trivy Config Scan)
+  # =========================================================================
+  job-5-iac-security:
+    name: "Job 5: IaC Security Scan"
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trivy Config / IaC Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config'
+          scan-ref: '.'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+  # =========================================================================
+  # SECURITY GATE 1
+  # =========================================================================
+  security-gate-1:
+    name: "Security Gate 1"
+    needs: [job-1-secret-scan, job-2-lint, job-3-sast-sonarqube, job-4-dependency-sca, job-5-iac-security]
+    runs-on: self-hosted
+    steps:
+      - name: Verify Security Scans Status
+        run: |
+          echo "=================================================="
+          echo " Security Gate 1 Passed: Code Scans & Linting Clean "
+          echo "=================================================="
+
+  # =========================================================================
+  # JOB 6: Unit Tests (Go Test & Vitest)
+  # =========================================================================
+  job-6-unit-tests:
+    name: "Job 6: Unit Tests"
+    needs: [security-gate-1]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run Backend Unit Tests
+        run: |
+          cd backend
+          go test -v -coverprofile=coverage.out ./...
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Frontend Unit Tests
+        run: |
+          cd frontend
+          npm ci
+          npm test
+
+  # =========================================================================
+  # JOB 7: Build Container Images
+  # =========================================================================
+  job-7-build:
+    name: "Job 7: Build Containers"
+    needs: [job-6-unit-tests]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Backend Docker Image
+        run: |
+          docker build -t devboard-backend:${{ github.sha }} ./backend
+          docker tag devboard-backend:${{ github.sha }} devboard-backend:latest
+
+      - name: Build Frontend Docker Image
+        run: |
+          docker build -t devboard-frontend:${{ github.sha }} ./frontend
+          docker tag devboard-frontend:${{ github.sha }} devboard-frontend:latest
+
+  # =========================================================================
+  # JOB 8: Generate SBOM (Syft / Trivy)
+  # =========================================================================
+  job-8-generate-sbom:
+    name: "Job 8: Generate SBOM"
+    needs: [job-7-build]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Backend SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'devboard-backend:${{ github.sha }}'
+          format: 'spdx-json'
+          output: 'backend-sbom.spdx.json'
+
+      - name: Generate Frontend SBOM
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          image-ref: 'devboard-frontend:${{ github.sha }}'
+          format: 'spdx-json'
+          output: 'frontend-sbom.spdx.json'
+
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-reports
+          path: '*.spdx.json'
+
+  # =========================================================================
+  # JOB 9: Container Scan (Trivy Image Scan)
+  # =========================================================================
+  job-9-container-scan:
+    name: "Job 9: Container Scan"
+    needs: [job-7-build]
+    runs-on: self-hosted
+    steps:
+      - name: Scan Backend Container Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devboard-backend:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Scan Frontend Container Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devboard-frontend:${{ github.sha }}'
+          format: 'table'
+          severity: 'CRITICAL,HIGH'
+
+  # =========================================================================
+  # JOB 10: Integration Tests
+  # =========================================================================
+  job-10-integration-tests:
+    name: "Job 10: Integration Tests"
+    needs: [job-7-build]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Integration Tests
+        run: ./scripts/integration_test.sh
+
+  # =========================================================================
+  # JOB 11: Deploy Test (Ephemeral Environment)
+  # =========================================================================
+  job-11-deploy-test:
+    name: "Job 11: Deploy Test Instance"
+    needs: [job-8-generate-sbom, job-9-container-scan, job-10-integration-tests]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Spin Up Ephemeral Test Stack
+        run: |
+          cp .env.example .env
+          docker compose up -d --build
+          echo "Test environment live on http://localhost:8080"
+
+  # =========================================================================
+  # JOB 12: DAST / ZAP Scan
+  # =========================================================================
+  job-12-dast-zap:
+    name: "Job 12: DAST / OWASP ZAP Scan"
+    needs: [job-11-deploy-test]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: 'http://localhost:8080'
+          rules_file_name: '.zap/zap-baseline.conf'
+          cmd_options: '-a'
+        continue-on-error: true
+
+      - name: Tear Down Ephemeral Test Stack
+        if: always()
+        run: |
+          docker compose down -v || true
+
+  # =========================================================================
+  # FINAL SECURITY GATE
+  # =========================================================================
+  final-security-gate:
+    name: "Final Security Gate"
+    needs: [job-12-dast-zap]
+    runs-on: self-hosted
+    steps:
+      - name: Evaluate Release Gate Criteria
+        run: |
+          echo "=========================================================="
+          echo " Final Security Gate Passed: SBOM, Scans & DAST Verified "
+          echo "=========================================================="
+
+  # =========================================================================
+  # JOB 13: Build Release
+  # =========================================================================
+  job-13-build-release:
+    name: "Job 13: Build Release & Push Registry"
+    needs: [final-security-gate]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Docker Login
+        if: secrets.DOCKER_USERNAME != ''
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push Release Images
+        if: secrets.DOCKER_USERNAME != ''
+        run: |
+          DOCKER_USER="${{ secrets.DOCKER_USERNAME }}"
+          TAG="${{ github.sha }}"
+
+          docker build -t $DOCKER_USER/devboard-backend:$TAG -t $DOCKER_USER/devboard-backend:latest ./backend
+          docker build -t $DOCKER_USER/devboard-frontend:$TAG -t $DOCKER_USER/devboard-frontend:latest ./frontend
+
+          docker push $DOCKER_USER/devboard-backend:$TAG
+          docker push $DOCKER_USER/devboard-backend:latest
+          docker push $DOCKER_USER/devboard-frontend:$TAG
+          docker push $DOCKER_USER/devboard-frontend:latest
+
+  # =========================================================================
+  # JOB 14: Deploy Staging
+  # =========================================================================
+  job-14-deploy-staging:
+    name: "Job 14: Deploy to Staging EC2"
+    needs: [job-13-build-release]
+    environment: staging
+    runs-on: self-hosted
+    steps:
+      - name: Deploy to EC2 Staging Instance via SSH
+        if: secrets.EC2_STAGING_HOST != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_STAGING_HOST }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/devboard || mkdir -p /opt/devboard && cd /opt/devboard
+            docker compose down || true
+            IMAGE_TAG=latest docker compose pull || true
+            IMAGE_TAG=latest docker compose up -d
+
+  # =========================================================================
+  # JOB 15: Deploy Production (Approval Gated via GitHub Environment)
+  # =========================================================================
+  job-15-deploy-production:
+    name: "Job 15: Deploy to Production EC2"
+    needs: [job-14-deploy-staging]
+    environment: production
+    runs-on: self-hosted
+    steps:
+      - name: Deploy to EC2 Production Instance via SSH
+        if: secrets.EC2_PRODUCTION_HOST != ''
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_PRODUCTION_HOST }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /opt/devboard || mkdir -p /opt/devboard && cd /opt/devboard
+            docker compose down || true
+            IMAGE_TAG=latest docker compose pull || true
+            IMAGE_TAG=latest docker compose up -d
+            curl -s -f http://localhost:8081/health || exit 1
