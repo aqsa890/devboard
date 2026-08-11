@@ -10,7 +10,7 @@ permissions:
 jobs:
   container-scan:
     name: "Container Scan (Trivy)"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Scan Backend Container Image
         uses: aquasecurity/trivy-action@master

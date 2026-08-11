@@ -9,7 +9,7 @@ permissions:
 jobs:
   unit-tests:
     name: "Unit Testing (Go & Vitest)"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

@@ -10,7 +10,7 @@ permissions:
 jobs:
   build-release:
     name: "Build Release & Push Registry"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     env:
       DOCKER_USER_SECRET: ${{ secrets.DOCKER_USERNAME }}
     steps:

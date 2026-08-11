@@ -10,7 +10,7 @@ permissions:
 jobs:
   dependency-sca:
     name: "Dependency Scan (Trivy FS & npm audit)"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

@@ -6,7 +6,7 @@ on:
 jobs:
   gate-1:
     name: "Security Gate 1 Evaluation"
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Verify Security Scans Status
         run: |
