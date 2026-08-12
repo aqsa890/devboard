@@ -15,15 +15,9 @@ jobs:
     env:
       EC2_HOST: ${{ secrets.EC2_STAGING_HOST }}
     steps:
-      - name: Deploy to EC2 Staging Instance via SSH
-        if: env.EC2_HOST != ''
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_STAGING_HOST }}
-          username: ${{ secrets.EC2_USER || 'ubuntu' }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd /opt/devboard || mkdir -p /opt/devboard && cd /opt/devboard
-            docker compose down || true
-            IMAGE_TAG=latest docker compose pull || true
-            IMAGE_TAG=latest docker compose up -d
+      - name: Deploy to EC2 Staging Instance
+        run: |
+          cd /opt/devboard || mkdir -p /opt/devboard && cd /opt/devboard
+          docker compose down || true
+          IMAGE_TAG=latest docker compose pull || true
+          IMAGE_TAG=latest docker compose up -d
