@@ -18,8 +18,19 @@ jobs:
         run: |
           docker build -t devboard-backend:${{ github.sha }} ./backend
           docker tag devboard-backend:${{ github.sha }} devboard-backend:latest
+          mkdir -p image-artifacts
+          docker save devboard-backend:${{ github.sha }} -o image-artifacts/devboard-backend.tar
 
       - name: Build Frontend Docker Image
         run: |
           docker build -t devboard-frontend:${{ github.sha }} ./frontend
           docker tag devboard-frontend:${{ github.sha }} devboard-frontend:latest
+          mkdir -p image-artifacts
+          docker save devboard-frontend:${{ github.sha }} -o image-artifacts/devboard-frontend.tar
+
+      - name: Upload Image Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-images
+          path: image-artifacts/*.tar
+          retention-days: 1

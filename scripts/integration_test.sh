@@ -43,7 +43,23 @@ done
 
 echo "[+] Backend health check passed!"
 
-# 4. Verify Frontend response
+# 4. Wait for Frontend to be ready
+echo "[+] Waiting for frontend to become ready..."
+MAX_RETRIES_FE=15
+RETRY_COUNT_FE=0
+
+until curl -s -f http://localhost:8080/ > /dev/null 2>&1; do
+  RETRY_COUNT_FE=$((RETRY_COUNT_FE+1))
+  if [ $RETRY_COUNT_FE -ge $MAX_RETRIES_FE ]; then
+    echo "[-] ERROR: Frontend failed to become ready within timeout!"
+    docker compose logs frontend
+    exit 1
+  fi
+  echo "    Waiting for frontend on http://localhost:8080/ ($RETRY_COUNT_FE/$MAX_RETRIES_FE)..."
+  sleep 2
+done
+
+# Verify Frontend response
 FRONTEND_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/ || true)
 if [ "$FRONTEND_HTTP_CODE" -ne 200 ]; then
   echo "[-] ERROR: Frontend returned HTTP $FRONTEND_HTTP_CODE expected 200"

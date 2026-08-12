@@ -14,6 +14,17 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Download Image Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: image-artifacts
+
+      - name: Load Docker Images
+        run: |
+          docker load -i image-artifacts/devboard-backend.tar
+          docker load -i image-artifacts/devboard-frontend.tar
+
       - name: Generate Backend SBOM
         uses: aquasecurity/trivy-action@master
         with:

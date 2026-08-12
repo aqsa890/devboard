@@ -12,6 +12,16 @@ jobs:
     name: "Container Scan (Trivy)"
     runs-on: ubuntu-latest
     steps:
+      - name: Download Image Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-images
+          path: image-artifacts
+
+      - name: Load Docker Images
+        run: |
+          docker load -i image-artifacts/devboard-backend.tar
+          docker load -i image-artifacts/devboard-frontend.tar
       - name: Scan Backend Container Image
         uses: aquasecurity/trivy-action@master
         with:
