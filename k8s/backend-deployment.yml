@@ -1,5 +1,5 @@
-apiVersion: apps/v1
 kind: Deployment
+apiVersion: apps/v1
 metadata:
   name: devboard-backend-deployment
   namespace: devboard
@@ -16,39 +16,15 @@ spec:
         app: devboard-backend
     spec:
       containers:
-      - name: devboard-backend
-        image: trainwithshubham/devboard-backend:latest
-        ports:
-          - containerPort: 8080
-        env:
-          - name: POSTGRES_USER
-            valueFrom:
-              configMapKeyRef:
-                name: devboard-configmap
-                key: POSTGRES_USER
-          
-          - name: POSTGRES_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: devboard-secrets
-                key: POSTGRES_PASSWORD
-
-          - name: POSTGRES_DB
-            valueFrom:
-              secretKeyRef:
-                name: devboard-secrets
-                key: POSTGRES_DB
-
-          - name: POSTGRES_URL
-            value: postgres://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)?sslmode=disable
-          
-          - name: PORT
-            value: "8080"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 15
-          periodSeconds: 10
-
-
+        - name: devboard-backend
+          image: elsa888/devboard-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: devboard-secret
+                  key: POSTGRES_URL

@@ -3,12 +3,14 @@ apiVersion: v1
 metadata:
   name: devboard-frontend-service
   namespace: devboard
+  labels:
+    app: devboard-frontend
 spec:
   selector:
     app: devboard-frontend
   ports:
-  - protocol: TCP
-    port: 8080
-    targetPort: 4173  # Pod port
-    nodePort: 30080  # Node ka port
-  type: NodePort
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
+  type: NodePort  

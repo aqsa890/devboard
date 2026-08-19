@@ -12,4 +12,3 @@ spec:
   - protocol: TCP
     port: 5432 # service 
     targetPort: 5432  # Pod port
-

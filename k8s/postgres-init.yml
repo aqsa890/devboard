@@ -51,4 +51,3 @@ data:
         ('Draft the launch blog post', '',                              2, 2, 'in_progress', 'medium', '2026-06-22'),
         ('Hero illustration',          '',                              2, 3, 'todo',        'low',    NULL);
     SELECT setval('projects_id_seq', (SELECT MAX(id) FROM projects));
-
